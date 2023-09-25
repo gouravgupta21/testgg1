@@ -45,43 +45,10 @@ jobs:
         INSTANCE_URL: ${{ secrets.SG_URL }}
       run: sfdx force:auth:jwt:grant --clientid $CLIENT_ID --jwtkeyfile ./server.key --username $USERNAME --instanceurl $INSTANCE_URL -a prod
 
-   name: Deployment to personal Org
-on:
-  pull_request:
-    types:
-      - opened
-      - synchronize
-    paths:
-      - force-app/**
-    branches:
-      - main
-jobs:
-  deployment-to-personal-org:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "14"
-      - name: Checkout source code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Install Salesforce CLI
-        run: >
-          wget
-          https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-linux-x64.tar.xz
-
-          mkdir ~/sfdx
-
-          tar xJf sfdx-linux-x64.tar.xz -C ~/sfdx --strip-components 1
-
-          echo "$HOME/sfdx/bin" >> $GITHUB_PATH
-
-          ~/sfdx/bin/sfdx version
-      - name: Authenticate to org with JWT
-        run: >-
-          echo ${{secrets.SF_SECRET_KEY}} > server.key
-
-          sfdx force:auth:jwt:grant --clientid=${{secrets.SF_CONSUME_KEY}} --jwtkeyfile=server.key --username=${{secrets.SF_USERNAME}} -s -a targetOrg --instanceurl=${{secrets.SG_URL}}
-      - name: Validate - run all tests
-        run: sfdx force:mdapi:deploy -l NoTestRun -c -d ./toDeploy -u prod -w 10
+    # Convert to Deploy Source
+    - name: Convert to Deploy Source
+      run: sfdx force:source:convert -r force-app -x ./manifest/package.xml -d ./toDeploy
+    
+    # Run Validation of Deploy Source
+    - name: Run Validation on Deploy Source
+      run: sfdx force:mdapi:deploy -l NoTestRun -c -d ./toDeploy -u prod -w 10
