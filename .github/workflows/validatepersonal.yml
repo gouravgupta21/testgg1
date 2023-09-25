@@ -84,6 +84,4 @@ jobs:
 
           sfdx force:auth:jwt:grant --clientid=${{secrets.SF_CONSUME_KEY}} --jwtkeyfile=server.key --username=${{secrets.SF_USERNAME}} -s -a targetOrg --instanceurl=${{secrets.SG_URL}}
       - name: Validate - run all tests
-        run: >
-          sfdx force:source:deploy -p "force-app" --checkonly --testlevel
-          NoTestRun --json
+        run: sfdx force:mdapi:deploy -l NoTestRun -c -d ./toDeploy -u prod -w 10
