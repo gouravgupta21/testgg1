@@ -5,10 +5,14 @@ name: Deploy to Salesforce Pipeline
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
 on:
-  push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
+    types:
+      - opened
+      - synchronize
+    paths:
+      - force-app/**
+    branches:
+      - main
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -45,10 +49,45 @@ jobs:
         INSTANCE_URL: ${{ secrets.SG_URL }}
       run: sfdx force:auth:jwt:grant --clientid $CLIENT_ID --jwtkeyfile ./server.key --username $USERNAME --instanceurl $INSTANCE_URL -a prod
 
-    # Convert to Deploy Source
-    - name: Convert to Deploy Source
-      run: sfdx force:source:convert -r force-app -x ./manifest/package.xml -d ./toDeploy
-    
-    # Run Validation of Deploy Source
-    - name: Run Validation on Deploy Source
-      run: sfdx force:mdapi:deploy -l -c NoTestRun -d ./toDeploy -u prod -w 10
+   name: Deployment to personal Org
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - force-app/**
+    branches:
+      - main
+jobs:
+  deployment-to-personal-org:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "14"
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install Salesforce CLI
+        run: >
+          wget
+          https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-linux-x64.tar.xz
+
+          mkdir ~/sfdx
+
+          tar xJf sfdx-linux-x64.tar.xz -C ~/sfdx --strip-components 1
+
+          echo "$HOME/sfdx/bin" >> $GITHUB_PATH
+
+          ~/sfdx/bin/sfdx version
+      - name: Authenticate to org with JWT
+        run: >-
+          echo ${{secrets.SF_SECRET_KEY}} > server.key
+
+          sfdx force:auth:jwt:grant --clientid=${{secrets.SF_CONSUME_KEY}} --jwtkeyfile=server.key --username=${{secrets.SF_USERNAME}} -s -a targetOrg --instanceurl=${{secrets.SG_URL}}
+      - name: Validate - run all tests
+        run: >
+          sfdx force:source:deploy -p "force-app" --checkonly --testlevel
+          NoTestRun --json
