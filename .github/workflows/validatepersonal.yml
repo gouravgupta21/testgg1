@@ -28,9 +28,9 @@ jobs:
           sfdx --version
       - name: Authenticate to org with JWT
         run: >-
-          echo ${{secrets.SF_SECRET_KEY}} > ./server.key
+          echo ${{secrets.SF_SECRET_KEY}} > server.key
 
-          sfdx force:auth:jwt:grant --clientid=${{secrets.SF_CONSUME_KEY}} --jwtkeyfile=./server.key --username=${{secrets.SF_USERNAME}} -s -a targetOrg --instanceurl=${{secrets.SG_URL}}
+          sfdx force:auth:jwt:grant --clientid=${{secrets.SF_CONSUME_KEY}} --jwtkeyfile=server.key --username=${{secrets.SF_USERNAME}} -s -a targetOrg --instanceurl=${{secrets.SG_URL}}
       - name: Installing java
         run: sudo apt-get update && sudo apt-get install default-jdk
       - name: Installing SFDX scanner
