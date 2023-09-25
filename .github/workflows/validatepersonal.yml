@@ -1,49 +1,47 @@
-name: Deployment to personal Org
+# This is a basic workflow to help you get started with Actions
+
+name: Deploy to Salesforce Pipeline
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
 on:
+  push:
+    branches: [ main ]
   pull_request:
-    types:
-      - opened
-      - synchronize
-    paths:
-      - force-app/**
-    branches:
-      - main
+    branches: [ main ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  deployment-to-personal-org:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
     runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "14"
-      - name: Checkout source code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Install Salesforce CLI
-        run: >
-          npm install sfdx-cli --global
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
 
-          #export PATH=~/sfdx/bin:$PATH
+    # Setup Node
+    - name: Setup Node
+      uses: actions/setup-node@v1
+    
+    # Install SFDX CLI
+    - name: Install SFDX CLI
+      run: npm install sfdx-cli --global
 
-          sfdx --version
-      - name: Authenticate to org with JWT
-        run: >-
-          echo ${{secrets.SF_SECRET_KEY}} > server.key
+    # Authorize SF Org
+    - name: Authorize SF Org
+      env:
+        CLIENT_ID: ${{ secrets.SF_CONSUME_KEY }}
+        USERNAME: ${{ secrets.SF_USERNAME }}
+        INSTANCE_URL: ${{ secrets.SG_URL }}
+      run: sfdx force:auth:jwt:grant --clientid $CLIENT_ID --jwtkeyfile ./server.key --username $USERNAME --instanceurl $INSTANCE_URL -a prod
 
-          sfdx force:auth:jwt:grant --clientid=${{secrets.SF_CONSUME_KEY}} --jwtkeyfile=server.key --username=${{secrets.SF_USERNAME}} -s -a targetOrg --instanceurl=${{secrets.SG_URL}}
-      - name: Installing java
-        run: sudo apt-get update && sudo apt-get install default-jdk
-      - name: Installing SFDX scanner
-        run: sfdx plugins:install @salesforce/sfdx-scanner
-      - name: Scan code
-        run: sfdx scanner:run --format sarif --target './**/*.cls' --category
-          'Design,Best Practices,Performance,Code Style,Security' --outfile
-          'apexScanResults.sarif'
-      - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v1
-        with:
-          sarif_file: ./apexScanResults.sarif
-      - name: Deployment - run all tests
-        run: >
-          sfdx force:source:deploy -p "force-app" --checkonly --testlevel
-          RunLocalTests --json
+    # Convert to Deploy Source
+    - name: Convert to Deploy Source
+      run: sfdx force:source:convert -r force-app -x ./manifest/package.xml -d ./toDeploy
+    
+    # Run Validation of Deploy Source
+    - name: Run Validation on Deploy Source
+      run: sfdx force:mdapi:deploy -l RunLocalTests -c -d ./toDeploy -u prod -w 10
