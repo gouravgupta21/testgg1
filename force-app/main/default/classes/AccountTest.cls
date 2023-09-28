@@ -13,7 +13,7 @@ public class AccountTest {
     }   
     @testSetup static void createAccount(){
         
-        Account sampleAccount = new Account(name = 'Test-Account1', Type='Customer - Channel',Industry='Consulting', Source__c='Web', Active__c = 'No');
+        Account sampleAccount = new Account(name = 'Test-Account', Type='Customer - Channel',Industry='Consulting', Source__c='Web', Active__c = 'No');
         insert sampleAccount;
     }
     
