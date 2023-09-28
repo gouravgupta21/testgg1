@@ -104,5 +104,5 @@ jobs:
           path: reports/scan-reports.html
       - name: Validate Delta components to Salesofrce
         run: |
-          sfdx force:mdapi:deploy -x delta/package/package.xml -c -u HubOrg
+          sfdx force:source:deploy -x delta/package/package.xml -c -u HubOrg
           #sfdx force:mdapi:deploy -c -d ./toDeploy -u prod -w 10
