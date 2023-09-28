@@ -59,7 +59,7 @@ jobs:
           USERNAME: ${{ secrets.SF_USERNAME }}
           INSTANCE_URL: ${{ secrets.SG_URL }}
         run: |
-          sfdx force:auth:jwt:grant --clientid CLIENT_ID --jwtkeyfile  ${{ secrets.JWT_KEY_FILE }} --username USERNAME --setdefaultdevhubusername -a HubOrg --instanceurl INSTANCE_URL 
+          sfdx force:auth:jwt:grant --clientid CLIENT_ID --jwtkeyfile  ${{ secrets.JWT_KEY_FILE }} --username USERNAME --setdefaultdevhubusername -a HubOrg --instanceurl INSTANCE_URL
       
       - name: Generate the package.xml for delta files
         run: |
