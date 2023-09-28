@@ -59,7 +59,7 @@ jobs:
           USERNAME: ${{ secrets.SF_USERNAME }}
           INSTANCE_URL: ${{ secrets.SG_URL }}
         run: |
-          sfdx force:auth:jwt:grant --clientid CLIENT_ID --jwtkeyfile  ${{ secrets.JWT_KEY_FILE }} --username USERNAME --setdefaultdevhubusername -a HubOrg --instanceurl INSTANCE_URL
+          sfdx force:auth:jwt:grant --clientid CLIENT_ID --jwtkeyfile  ${{ secrets.JWT_KEY_FILE }} --username $USERNAME HubOrg --instanceurl $INSTANCE_URL -a prod
       
       - name: Generate the package.xml for delta files
         run: |
@@ -70,4 +70,4 @@ jobs:
       
       - name: Deploy Delta components to Salesofrce
         run: |
-          sfdx force:source:deploy -x delta/package/package.xml -c -l RunLocalTests -u HubOrg
+          sfdx force:source:deploy -x delta/package/package.xml -c -d -u HubOrg
