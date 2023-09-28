@@ -3,10 +3,6 @@ run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on:
   push:
     branches: [ mergedev_1_0 ]
-  pull_request:
-    types: [closed]
-    branches:
-      - mergedev_1_0
     paths:
       - 'force-app/**'
       
