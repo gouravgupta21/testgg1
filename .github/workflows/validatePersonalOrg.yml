@@ -2,14 +2,13 @@ name: GitHub Actions Demo
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on:
   push:
-    branches: [ main ]
+    branches: [ mergedev_1_0 ]
   pull_request:
-    types: [closed]
+    types: [opened,synchronize]
     branches:
-      - master
-      - main
+      - feature/dev/*
     paths:
-      - 'force-app/**'
+      - force-app/**
       
 jobs:
   Explore-GitHub-Actions:
