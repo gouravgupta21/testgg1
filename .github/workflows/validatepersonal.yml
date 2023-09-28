@@ -4,7 +4,13 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    types: [closed]
+    branches:
+      - master
+      - main
+    paths:
+      - 'force-app/**'
+      
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
@@ -24,6 +30,7 @@ jobs:
       
   build:
     runs-on: ubuntu-latest
+    environment: production
     steps:
       # Checkout the Source code from the latest commit
       - uses: actions/checkout@v3
@@ -38,9 +45,14 @@ jobs:
         run: |
           npm install sfdx-cli --global
           sfdx force --help
+          
+      - name: Install the sfdx-git-delta plugin
+        run: |
+          echo 'y' | sfdx plugins:install sfdx-git-delta
+          
       - name: Decrypt the server.key.enc file & store inside assets folder
         run: |
-          openssl enc -nosalt -aes-256-cbc -d -in assets/server.key.enc -out assets/server.key -base64 -K DECRYPTION_KEY -iv DECRYPTION_IV
+          openssl enc -nosalt -aes-256-cbc -d -in ${{ secrets.ENCRYPTION_KEY_FILE }} -out ${{ secrets.JWT_KEY_FILE }} -base64 -K ${{ secrets.DECRYPTION_KEY }} -iv ${{ secrets.DECRYPTION_IV }}
           
       - name: Authenticate Salesforce ORG
         env:
@@ -48,8 +60,15 @@ jobs:
           USERNAME: ${{ secrets.SF_USERNAME }}
           INSTANCE_URL: ${{ secrets.SG_URL }}
         run: |
-          sfdx force:auth:jwt:grant --clientid CLIENT_ID --jwtkeyfile assets/server.key --username USERNAME --setdefaultdevhubusername -a HubOrg
+          sfdx force:auth:jwt:grant --clientid CLIENT_ID --jwtkeyfile  ${{ secrets.JWT_KEY_FILE }} --username USERNAME --setdefaultdevhubusername -a HubOrg --instanceurl INSTANCE_URL 
       
-      - name: Validate Source Code Against Salesforce ORG
+      - name: Generate the package.xml for delta files
         run: |
-          sfdx force:source:deploy -p force-app -c -u HubOrg
+          mkdir delta
+          sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore
+          echo "--- package.xml generated with added and modified metadata ---"
+          cat delta/package/package.xml
+      
+      - name: Deploy Delta components to Salesofrce
+        run: |
+          sfdx force:source:deploy -x delta/package/package.xml -c -l RunLocalTests -u HubOrg
