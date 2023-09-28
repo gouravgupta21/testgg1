@@ -2,14 +2,13 @@ name: GitHub Actions Demo
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on:
   push:
-    branches: [ main ]
+    branches: [ mergedev_1_0 ]
   pull_request:
-    types: [closed]
+    types: [opened,synchronize]
     branches:
-      - master
-      - main
+      - mergedev_1_0
     paths:
-      - 'force-app/**'
+      - force-app/**
       
 jobs:
   Explore-GitHub-Actions:
@@ -105,7 +104,7 @@ jobs:
         with:
           name: cli-scan-report
           path: reports/scan-reports.html
-      - name: Deploy Delta components to Salesofrce
+      - name: Validate Delta components to Salesofrce
         run: |
           sfdx force:mdapi:deploy -x delta/package/package.xml -c -u HubOrg
           #sfdx force:mdapi:deploy -c -d ./toDeploy -u prod -w 10

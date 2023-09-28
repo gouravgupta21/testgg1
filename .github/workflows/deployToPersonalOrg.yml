@@ -1,0 +1,110 @@
+name: GitHub Actions Demo
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on:
+  push:
+    branches: [ mergedev_1_0 ]
+  pull_request:
+    types: [closed]
+    branches:
+      - mergedev_1_0
+    paths:
+      - 'force-app/**'
+      
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+      - run: echo "🍏 This job's status is ${{ job.status }}."
+      
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the Source code from the latest commit
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Install NPM
+        run: |
+          npm install
+      # Install the SFDX CLI using npm command
+      - name: Install the SFDX CLI
+        run: |
+          npm install sfdx-cli --global
+          sfdx force --help
+          
+      - name: Install the sfdx-git-delta plugin
+        run: |
+          echo 'y' | sfdx plugins:install sfdx-git-delta
+          
+      - name: Decrypt the server.key.enc file & store inside assets folder
+        run: |
+          openssl enc -nosalt -aes-256-cbc -d -in ${{ secrets.ENCRYPTION_KEY_FILE }} -out ${{ secrets.JWT_KEY_FILE }} -base64 -K ${{ secrets.DECRYPTION_KEY }} -iv ${{ secrets.DECRYPTION_IV }}
+          
+      - name: Authenticate Salesforce ORG
+        env:
+          CLIENT_ID: ${{ secrets.SF_CONSUME_KEY }}
+          USERNAME: ${{ secrets.SF_USERNAME }}
+          INSTANCE_URL: ${{ secrets.SG_URL }}
+        run: |
+          #sfdx force:auth:jwt:grant --clientid $CLIENT_ID --jwtkeyfile ./server.key --username $USERNAME --instanceurl $INSTANCE_URL -a prod
+          sfdx force:auth:jwt:grant --clientid $CLIENT_ID --jwtkeyfile  ${{ secrets.JWT_KEY_FILE }} --username $USERNAME --setdefaultdevhubusername -a HubOrg --instanceurl ${{ secrets.SG_URL }} 
+      
+      - name: Generate the package.xml for delta files
+        run: |
+          mkdir delta
+          sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore
+          echo "--- package.xml generated with added and modified metadata ---"
+          cat delta/package/package.xml
+
+          
+      - name: Install the SFDX CLI Scanner
+        run: |
+          echo 'y' | sfdx plugins:install @salesforce/sfdx-scanner
+      
+      - name: Run SFDX CLI Scanner
+        run: |
+          mkdir reports
+          sfdx scanner:run -f html -t "force-app" -e "eslint,retire-js,pmd,cpd" -c "Design,Best Practices,Code Style,Performance,Security" --outfile reports/scan-reports.html
+      
+      # Run Apex PMD Scan
+      - name: 'Run PMD scan'
+        uses: pmd/pmd-github-action@v1
+        id: pmd
+        with:
+            sourcePath: 'force-app'
+            rulesets: 'ruleset.xml'
+            analyzeModifiedFilesOnly: false
+
+      # Check for PMD violations
+      - name: 'Check for PMD violations'
+        # if: steps.pmd.outputs.violations != 0
+        run: |
+          # exit 1
+          echo "test"
+      
+      - name: Upload SARIF file
+        # if: steps.pmd.outputs.violations != 0
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: pmd-report.sarif
+      
+      - uses: actions/upload-artifact@v3
+        with:
+          name: cli-scan-report
+          path: reports/scan-reports.html
+      - name: Deploy Delta components to Salesofrce
+        run: |
+          sfdx force:mdapi:deploy -x delta/package/package.xml -u HubOrg
+          #sfdx force:mdapi:deploy -c -d ./toDeploy -u prod -w 10
