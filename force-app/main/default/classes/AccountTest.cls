@@ -1,5 +1,5 @@
 @isTest()
-public with sharing class SLM_AccountTest {
+public with sharing class AccountTest {
     @isTest() 
     static void queryAccount(){
         AccountOpeartions.getAccounts('Customer - Channel','Consulting',null);
@@ -13,7 +13,7 @@ public with sharing class SLM_AccountTest {
     }   
     @testSetup static void createAccount(){
 
-        Account sampleAccount = new Account(name = 'Test-Account', Type='Customer - Channel',Industry='Consulting', Source__c='Web', Active__c = 'No');
+        Account sampleAccount = new Account(name = 'Test-Account1', Type='Customer - Channel',Industry='Consulting', Source__c='Web', Active__c = 'No');
         insert sampleAccount;
     }
 
