@@ -69,6 +69,8 @@ jobs:
           sfdx sgd:source:delta --to "HEAD" --from "HEAD~1" --output "./delta" --ignore-whitespace -d -i .sgdignore
           echo "--- package.xml generated with added and modified metadata ---"
           cat delta/package/package.xml
+          echo "--- destructiveChanges.xml generated with deleted metadata ---"
+          cat delta/destructiveChanges/destructiveChanges.xml
 
       # Run Validation of Destructive Source
       - name: Run Validation on Destructive Source
