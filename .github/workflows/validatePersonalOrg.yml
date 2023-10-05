@@ -107,9 +107,13 @@ jobs:
       - name: Convert to Deploy Source
         run: sfdx force:source:convert -r force-app -x delta/package/package.xml -d ./toDeploy
     
+      # Run Validation of Destructive Source
+      - name: Run Validation on Destructive Source
+        run: sfdx force:mdapi:deploy -c -d ./toDeploy -u HubOrg -w 10
+
       # Run Validation of Deploy Source
       - name: Run Validation on Deploy Source
-        run: sfdx force:mdapi:deploy -c -d ./toDeploy -u HubOrg -w 10
+        run: sfdx force:source:deploy -x delta/package/package.xml -c -u HubOrg
       
      # - name: Validate Delta components to Salesofrce
       #  run: |
