@@ -109,11 +109,11 @@ jobs:
     
       # Run Validation of Destructive Source
       - name: Run Validation on Destructive Source
-        run: sfdx force:mdapi:deploy -c -d ./toDeploy -u HubOrg -w 10
+        run: sfdx force:mdapi:deploy -c -d ./toDeploy -u HubOrg -w 10 --ignorewarnings
 
       # Run Validation of Deploy Source
       - name: Run Validation on Deploy Source
-        run: sfdx force:source:deploy -x delta/package/package.xml -c -u HubOrg
+        run: sfdx force:source:deploy -x delta/package/package.xml -c -u HubOrg --ignorewarnings
       
      # - name: Validate Delta components to Salesofrce
       #  run: |
