@@ -1,4 +1,4 @@
-name: Deployment to org
+name: Deployment to org DEV
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on:
   push:
