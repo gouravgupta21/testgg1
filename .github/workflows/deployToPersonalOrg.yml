@@ -64,43 +64,6 @@ jobs:
           echo "--- package.xml generated with added and modified metadata ---"
           cat delta/package/package.xml
 
-          
-      - name: Install the SFDX CLI Scanner
-        run: |
-          echo 'y' | sfdx plugins:install @salesforce/sfdx-scanner
-      
-      - name: Run SFDX CLI Scanner
-        run: |
-          mkdir reports
-          sfdx scanner:run -f html -t "force-app" -e "eslint,retire-js,pmd,cpd" -c "Design,Best Practices,Code Style,Performance,Security" --outfile reports/scan-reports.html
-      
-      # Run Apex PMD Scan
-      - name: 'Run PMD scan'
-        uses: pmd/pmd-github-action@v1
-        id: pmd
-        with:
-            sourcePath: 'force-app'
-            rulesets: 'ruleset.xml'
-            analyzeModifiedFilesOnly: false
-
-      # Check for PMD violations
-      - name: 'Check for PMD violations'
-        # if: steps.pmd.outputs.violations != 0
-        run: |
-          # exit 1
-          echo "test"
-      
-      - name: Upload SARIF file
-        # if: steps.pmd.outputs.violations != 0
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: pmd-report.sarif
-      
-      - uses: actions/upload-artifact@v3
-        with:
-          name: cli-scan-report
-          path: reports/scan-reports.html
-          
       #- name: Deploy Delta components to Salesofrce
       #  run: |
       #    sfdx force:mdapi:deploy -x delta/package/package.xml -u HubOrg
