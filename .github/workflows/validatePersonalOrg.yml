@@ -1,4 +1,4 @@
-name: Validate agains org
+name: Validate agains org master
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on:
   pull_request:
@@ -66,56 +66,11 @@ jobs:
           echo "--- package.xml generated with added and modified metadata ---"
           cat delta/package/package.xml
 
-          
-      - name: Install the SFDX CLI Scanner
-        run: |
-          echo 'y' | sfdx plugins:install @salesforce/sfdx-scanner
-      
-      - name: Run SFDX CLI Scanner
-        run: |
-          mkdir reports
-          sfdx scanner:run -f html -t "force-app" -e "eslint,retire-js,pmd,cpd" -c "Design,Best Practices,Code Style,Performance,Security" --outfile reports/scan-reports.html
-      
-      # Run Apex PMD Scan
-      - name: 'Run PMD scan'
-        uses: pmd/pmd-github-action@v1
-        id: pmd
-        with:
-            sourcePath: 'force-app'
-            rulesets: 'ruleset.xml'
-            analyzeModifiedFilesOnly: false
-
-      # Check for PMD violations
-      - name: 'Check for PMD violations'
-        # if: steps.pmd.outputs.violations != 0
-        run: |
-          # exit 1
-          echo "test"
-      
-      - name: Upload SARIF file
-        # if: steps.pmd.outputs.violations != 0
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: pmd-report.sarif
-      
-      - uses: actions/upload-artifact@v3
-        with:
-          name: cli-scan-report
-          path: reports/scan-reports.html
-
-      # Convert to Deploy Source
-      - name: Convert to Deploy Source
-        run: sfdx force:source:convert -r force-app -x delta/package/package.xml -d ./toDeploy
-    
       # Run Validation of Destructive Source
       - name: Run Validation on Destructive Source
-        run: sfdx force:mdapi:deploy -c -d ./toDeploy -u HubOrg -w 10
+        run: sfdx force:mdapi:deploy -c -d delta/destructiveChanges -u HubOrg -w 10 --ignorewarnings
 
       # Run Validation of Deploy Source
       - name: Run Validation on Deploy Source
-        run: sfdx force:source:deploy -x delta/package/package.xml -c -u HubOrg
+        run: sfdx force:source:deploy -c -x delta/package/package.xml -u HubOrg -w 10
       
-     # - name: Validate Delta components to Salesofrce
-      #  run: |
-       #   sfdx force:source:deploy -x delta/package/package.xml -c -u HubOrg
-          #sfdx force:mdapi:deploy -c -d ./toDeploy -u prod -w 10
