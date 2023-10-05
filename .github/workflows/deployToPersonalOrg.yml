@@ -100,7 +100,15 @@ jobs:
         with:
           name: cli-scan-report
           path: reports/scan-reports.html
-      - name: Deploy Delta components to Salesofrce
-        run: |
-          sfdx force:mdapi:deploy -x delta/package/package.xml -u HubOrg
-          #sfdx force:mdapi:deploy -c -d ./toDeploy -u prod -w 10
+          
+      #- name: Deploy Delta components to Salesofrce
+      #  run: |
+      #    sfdx force:mdapi:deploy -x delta/package/package.xml -u HubOrg
+      #    #sfdx force:mdapi:deploy -c -d ./toDeploy -u prod -w 10
+      # Run Validation of Destructive Source
+      - name: Run Validation on Destructive Source
+        run: sfdx force:mdapi:deploy -d ./toDeploy -u HubOrg -w 10 --ignorewarnings
+
+      # Run Validation of Deploy Source
+      - name: Run Validation on Deploy Source
+        run: sfdx force:source:deploy -x delta/package/package.xml -u HubOrg --ignorewarnings
